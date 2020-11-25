@@ -40,16 +40,24 @@
 # - Base Address for Display: 0x10008000 ($gp) #
 
 .data
-displayAddress:	.word	0x10008000
+displayAddress:	.word	0x10008000  # base address for display
 bgcolor: .word 0xffffff  # white
 pfcolor: .word 0x00ff00  # green
 ddcolor: .word 0x0000ff  # blue
-ddpos_x: .word 100
-ddpos_y: .word 10
-	
+ddpos_x: .word 100  # x of doodler
+x_up: .word 0   # if >0, x go up  if =0 x go down
+ddpos_y: .word 10  # y of doodler
+pfpos: .space 80  # array for platform pos: [x1, y1, x2, y2, ...]
+
 .text
 
 main:
+	# initialize first platform
+	la $t1, pfpos
+	addi $t2, $zero, 64   # add x1 to pfpos
+	addi $t3, $zero, 20   # add y1 to pfpos
+	sw $t2, 0($t1)
+	sw $t3, 4($t1)
 
 draw:
 	# draw background
@@ -103,21 +111,13 @@ save_x_K:
 	j end_key
 
 end_key:
-	# push loc of platform to stack, draw platforms
-	add $t2, $zero, 1288
-	addi $sp, $sp, -4
-	sw $t2, 0($sp)
-	jal drawpf
+
+	# push random loc of platform to pfpos, draw platforms
+
 	
-	add $t2, $zero, 2200
-	addi $sp, $sp, -4
-	sw $t2, 0($sp)
-	jal drawpf
 	
-	add $t2, $zero, 3000
-	addi $sp, $sp, -4
-	sw $t2, 0($sp)
 	jal drawpf
+
 	
 	# calcullate loc
 	lw $t3, ddpos_x
@@ -130,12 +130,45 @@ end_key:
 	sw $t2, 0($sp)
 	jal drawdd	
 	
-	# update new loc (drop)
+	# check collide, return 1 if collide with platform
+	jal is_collide
+	lw $t2, 0($sp)
+	addi $sp, $sp, 4 
+	
+	addi $t3, $zero, 1
+	beq $t2, $t3, pf_collide
+	j update_dd
+	
+# update new loc of doodler (increase) if collide
+pf_collide:
+	lw $t5, x_up
+	addi $t5, $t5, 10  # go up for 10 times
+	sw $t5, x_up
+	
+	
+update_dd:
+	lw $t4, x_up
+	beqz $t4, update_no_collide
+	j update_is_collide
+update_no_collide:	
+	# update new loc of doodler (drop) if no collide
 	lw $t4, ddpos_y
 	addi $t4, $t4, 1
-	#sw $t4, ddpos_y
+	sw $t4, ddpos_y
+	j sleep
+update_is_collide:
+	# update new loc of doodler (rise) if collide
+	lw $t4, ddpos_y
+	addi $t4, $t4, -1
+	sw $t4, ddpos_y	
+	# decrease x_up by 1
+	lw $t5, x_up
+	addi $t5, $t5, -1
+	sw $t5, x_up
 	
+	j sleep	
 	
+sleep:	
 	# sleep
 	li $v0, 32
 	li $a0, 80
@@ -149,21 +182,26 @@ end_key:
    
 drawpf: 
 	# load loc from stack
-	lw $t2, 0($sp)  # start point
-	lw $t0, displayAddress
-	addi $sp, $sp, 4
-	
-	# draw platform, length is 4 pixels
-	add $t3, $zero, $zero  # offset
-	add $t4, $zero, 40  # limit
+	lw $t0, displayAddress  # base address
 	lw $t1, pfcolor  # green
+	la $t2, pfpos  # array
+	lw $t3, 0($t2)  # x1
+	lw $t4, 4($t2)  # y1
+
+	sll $t4, $t4, 7
+	add $t4, $t3, $t4
+	
+	# draw platform, length is 10 units
+	add $t5, $zero, $zero  # offset
+	add $t6, $zero, 40  # limit
+	
 	
 pf:
-	bge $t3, $t4, endpf
-	add $t5, $t3, $t2  # new loc
-	add $t5, $t0, $t5
-	sw $t1, 0($t5) # paint green platform
-	addi $t3, $t3, 4
+	bge $t5, $t6, endpf
+	add $t7, $t0, $t4  # new loc
+	add $t7, $t7, $t5
+	sw $t1, 0($t7) # paint green platform
+	addi $t5, $t5, 4
 	j pf
 	
 endpf:
@@ -195,6 +233,48 @@ drawdd:
 	
 	jr $ra
 
+#=======check if doodler collide with platform======
+is_collide:
+	lw $t1, ddpos_x  # x of dd
+	lw $t2, ddpos_y  # y of dd
+	la $t3, pfpos    # array of platform pos
+	
+	add $t4, $zero, $zero  # counter
+	addi $t5, $zero, 80  # limit for loop over pfpos
+	
+loop_pfpos:
+	bge $t4, $t5, end_loop_pfpos
+	add $s3, $t3, $t4  # s3: index of xi of pf
+	lw $t6, 0($s3)  #t6: xi of pf
+	addi $s4, $s3, 4  # t7: index of yi of pf
+	lw $t7, 0($s4)  #t7: yi of pf
+	
+	# y_pf=y_dd+3
+	addi $s0, $t2, 3  #y_dd+3
+	bne $s0, $t7, end_if
+	
+	# x_pf - 4 <= x_dd <= x_pf + 40
+	addi $s0, $t6, -4
+	bgt $s0, $t1, end_if
+	addi $s1, $t6, 40
+	blt $s1, $t1, end_if
+	
+	# yes! they collide, push 1, end loop
+	addi $s2, $zero, 1
+	addi $sp, $sp, -4
+	sw $s2, 0($sp)
+	jr $ra
+	
+end_if:
+	addi $t4, $t4, 8
+	j loop_pfpos
+	
+	
+end_loop_pfpos:
+	addi $s2, $zero, 0
+	addi $sp, $sp, -4
+	sw $s2, 0($sp)
+	jr $ra
 
 Exit:
 	li $v0, 10 # terminate the program gracefully
