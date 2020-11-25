@@ -30,3 +30,79 @@
 # - (write here, if any)
 #
 #####################################################################
+
+# Demo for painting
+#
+# Bitmap Display Configuration:
+# - Unit width in pixels: 8
+# - Unit height in pixels: 8
+# - Display width in pixels: 256
+# - Display height in pixels: 256
+# - Base Address for Display: 0x10008000 ($gp) #
+.data
+displayAddress:	.word	0x10008000
+bgcolor: .word 0xffffff
+pfcolor: .word 0x00ff00
+	
+	
+.text
+	lw $t0, displayAddress	# $t0 stores the base address for display
+	lw $t1, bgcolor		# $t1 stores the red colour code
+	
+	add $t2, $zero, $zero  # offset
+	add $t3, $zero, 4096  # limit
+	
+drawbg:
+	bge $t2, $t3, draw
+	add $t4, $t2, $t0 
+	sw $t1, 0($t4) # paint white background
+	addi $t2, $t2, 4
+	j drawbg
+	
+draw:
+	# push loc, color of platform to stack
+	add $t2, $zero, 1288
+	addi $sp, $sp, -4
+	sw $t2, 0($sp)
+	jal drawpf
+	
+	add $t2, $zero, 2200
+	addi $sp, $sp, -4
+	sw $t2, 0($sp)
+	jal drawpf
+	
+	add $t2, $zero, 3000
+	addi $sp, $sp, -4
+	sw $t2, 0($sp)
+	jal drawpf
+        
+        j draw
+        
+        
+drawpf: 
+	# load loc from stack
+	lw $t2, 0($sp)  # start point
+	addi $sp, $sp, 4
+	
+	# draw platform, length is 4 pixels
+	add $t3, $zero, $zero  # offset
+	add $t4, $zero, 40  # limit
+	lw $t1, pfcolor  # green
+	
+pfloop:
+	bge $t3, $t4, endpfloop
+	add $t5, $t3, $t2  # new loc
+	add $t5, $t0, $t5
+	sw $t1, 0($t5) # paint green platform
+	addi $t3, $t3, 4
+	j pfloop
+endpfloop:
+	jr $ra
+
+
+Exit:
+	li $v0, 10 # terminate the program gracefully
+	syscall
+
+
+
