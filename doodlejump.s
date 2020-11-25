@@ -231,16 +231,11 @@ drawdd:
 	add $t2, $t2, $t0
 
 	sw $t1, 0($t2) # paint blue player
-	addi $t2, $t2, 124
-	sw $t1, 0($t2) 
-	addi $t2, $t2, 4
-	sw $t1, 0($t2) 
-	addi $t2, $t2, 4
-	sw $t1, 0($t2)
-	addi $t2, $t2, 120
-	sw $t1, 0($t2)
-	addi $t2, $t2, 8
-	sw $t1, 0($t2)
+	sw $t1, 124($t2) 
+	sw $t1, 128($t2) 
+	sw $t1, 132($t2)
+	sw $t1, 252($t2)
+	sw $t1, 260($t2)
 	
 	jr $ra
 
@@ -293,10 +288,18 @@ died:
 	lw $t0, displayAddress  # base address
 	lw $t1, diecolor  # black
 	
-	addi $t2, $zero, 1340
+	addi $t2, $zero, 1300
 	add $t2, $t2, $t0
 	sw $t1, 0($t2) 
-
+	sw $t1, 128($t2) 
+	sw $t1, 256($t2) 
+	sw $t1, 260($t2) 
+	sw $t1, 264($t2) 
+	sw $t1, 392($t2)
+	sw $t1, 520($t2)
+	sw $t1, 516($t2)
+	sw $t1, 512($t2)
+	sw $t1, 384($t2) 
 die_loop:
 	
 	# check keyboard press
