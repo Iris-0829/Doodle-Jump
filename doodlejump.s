@@ -31,7 +31,6 @@
 #
 #####################################################################
 
-# Demo for painting
 #
 # Bitmap Display Configuration:
 # - Unit width in pixels: 8
@@ -39,28 +38,44 @@
 # - Display width in pixels: 256
 # - Display height in pixels: 256
 # - Base Address for Display: 0x10008000 ($gp) #
+
 .data
 displayAddress:	.word	0x10008000
-bgcolor: .word 0xffffff
-pfcolor: .word 0x00ff00
-ddcolor: .word 0x0000ff
-	
+bgcolor: .word 0xffffff  # white
+pfcolor: .word 0x00ff00  # green
+ddcolor: .word 0x0000ff  # blue
+ddpos_x: .word 100
+ddpos_y: .word 15
 	
 .text
-	lw $t0, displayAddress	# $t0 stores the base address for display
-	lw $t1, bgcolor		# $t1 stores the red colour code
-	
-	add $t2, $zero, $zero  # offset
-	add $t3, $zero, 4096  # limit
-	
-drawbg:
-	bge $t2, $t3, draw
-	add $t4, $t2, $t0 
-	sw $t1, 0($t4) # paint white background
-	addi $t2, $t2, 4
-	j drawbg
-	
+
+main:
+
 draw:
+	# draw background
+	jal drawbg
+	
+	# check keyboard press
+	lw $t8, 0xffff0000
+ 	beq $t8, 1, keyboard_input
+ 	j end_key
+keyboard_input:
+	lw $t2, 0xffff0004
+	beq $t2, 0x6A, respond_to_J
+	beq $t2, 0x6B, respond_to_K
+	j end_key
+respond_to_J:  # player should go left
+	li $v0, 1		  
+	la $a0, 7	
+	syscall	
+	j end_key
+respond_to_K:  # player should go right
+	li $v0, 1		  
+	la $a0, 8	
+	syscall	
+	j end_key
+
+end_key:
 	# push loc of platform to stack, draw platforms
 	add $t2, $zero, 1288
 	addi $sp, $sp, -4
@@ -77,15 +92,50 @@ draw:
 	sw $t2, 0($sp)
 	jal drawpf
 	
+	# calcullate loc
+	lw $t3, ddpos_x
+	lw $t4, ddpos_y
+	sll $t4, $t4, 7
+	
 	# push loc of player to stack, draw player
-	add $t2, $zero, 2800
+	add $t2, $t3, $t4
 	addi $sp, $sp, -4
 	sw $t2, 0($sp)
 	jal drawdd	
+	
+	# update new loc (drop)
+	lw $t4, ddpos_y
+	addi $t4, $t4, 1
+	sw $t4, ddpos_y
+	
+	
+	# sleep
+	#li $v0, 32
+	#li $a0, 1
+	#syscall
+	
         
         j draw
-        
-        
+
+drawbg:        
+	lw $t0, displayAddress	# base address for display
+	lw $t1, bgcolor		# red 
+	
+	add $t2, $zero, $zero  # offset
+	add $t3, $zero, 4096  # limit
+
+bg:	
+	bge $t2, $t3, endbg
+	add $t4, $t2, $t0 
+	sw $t1, 0($t4)  # paint white background
+	addi $t2, $t2, 4
+	j bg
+	
+endbg:
+	jr $ra
+	
+	
+
    
 drawpf: 
 	# load loc from stack
@@ -105,6 +155,7 @@ pf:
 	sw $t1, 0($t5) # paint green platform
 	addi $t3, $t3, 4
 	j pf
+	
 endpf:
 	jr $ra
 	
