@@ -42,12 +42,14 @@
 .data
 displayAddress:	.word	0x10008000  # base address for display
 bgcolor: .word 0xffffff  # white
+diecolor: .word 0x000000 # black
 pfcolor: .word 0x00ff00  # green
 ddcolor: .word 0x0000ff  # blue
 ddpos_x: .word 100  # x of doodler
 x_up: .word 0   # if >0, x go up  if =0 x go down
 ddpos_y: .word 10  # y of doodler
 pfpos: .space 80  # array for platform pos: [x1, y1, x2, y2, ...]
+
 
 .text
 
@@ -171,10 +173,19 @@ update_is_collide:
 sleep:	
 	# sleep
 	li $v0, 32
-	li $a0, 80
+	li $a0, 50
 	syscall
 	
+        # check if doodler die (y > 32), if die, end central loop
+        lw $t2, ddpos_y
         
+        addi $t1, $zero, 32
+        bgt $t2, $t1, die
+        j redraw
+die:
+	jal died
+        
+redraw:
         j draw
 
 
@@ -275,6 +286,41 @@ end_loop_pfpos:
 	addi $sp, $sp, -4
 	sw $s2, 0($sp)
 	jr $ra
+
+#==============doodler died=============
+died:
+	# paint BYE, check if r is pressed
+	lw $t0, displayAddress  # base address
+	lw $t1, diecolor  # black
+	
+	addi $t2, $zero, 1340
+	add $t2, $t2, $t0
+	sw $t1, 0($t2) 
+
+die_loop:
+	
+	# check keyboard press
+	lw $t8, 0xffff0000
+ 	beq $t8, 1, die_keyboard_input
+ 	j die_no_key
+die_keyboard_input:  # a key is pressed
+	lw $t2, 0xffff0004
+	beq $t2, 0x73, respond_to_S
+die_no_key:
+	# sleep
+	li $v0, 32
+	li $a0, 50
+	syscall
+	j die_loop
+	
+respond_to_S:
+	# restart
+	addi $t1, $zero, 100
+	addi $t2, $zero, 10
+	sw $t1, ddpos_x
+	sw $t2, ddpos_y
+	jr $ra
+
 
 Exit:
 	li $v0, 10 # terminate the program gracefully
