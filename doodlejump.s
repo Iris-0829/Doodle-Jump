@@ -43,6 +43,7 @@
 displayAddress:	.word	0x10008000
 bgcolor: .word 0xffffff
 pfcolor: .word 0x00ff00
+ddcolor: .word 0x0000ff
 	
 	
 .text
@@ -60,7 +61,7 @@ drawbg:
 	j drawbg
 	
 draw:
-	# push loc, color of platform to stack
+	# push loc of platform to stack, draw platforms
 	add $t2, $zero, 1288
 	addi $sp, $sp, -4
 	sw $t2, 0($sp)
@@ -75,13 +76,21 @@ draw:
 	addi $sp, $sp, -4
 	sw $t2, 0($sp)
 	jal drawpf
+	
+	# push loc of player to stack, draw player
+	add $t2, $zero, 2800
+	addi $sp, $sp, -4
+	sw $t2, 0($sp)
+	jal drawdd	
         
         j draw
         
         
+   
 drawpf: 
 	# load loc from stack
 	lw $t2, 0($sp)  # start point
+	lw $t0, displayAddress
 	addi $sp, $sp, 4
 	
 	# draw platform, length is 4 pixels
@@ -89,14 +98,40 @@ drawpf:
 	add $t4, $zero, 40  # limit
 	lw $t1, pfcolor  # green
 	
-pfloop:
-	bge $t3, $t4, endpfloop
+pf:
+	bge $t3, $t4, endpf
 	add $t5, $t3, $t2  # new loc
 	add $t5, $t0, $t5
 	sw $t1, 0($t5) # paint green platform
 	addi $t3, $t3, 4
-	j pfloop
-endpfloop:
+	j pf
+endpf:
+	jr $ra
+	
+	
+	
+drawdd: 
+	# load loc from stack
+	lw $t2, 0($sp)  # start point
+	lw $t0, displayAddress
+	addi $sp, $sp, 4
+	
+	# draw player with particular shape
+	lw $t1, ddcolor  # blue
+	add $t2, $t2, $t0
+
+	sw $t1, 0($t2) # paint blue player
+	addi $t2, $t2, 124
+	sw $t1, 0($t2) 
+	addi $t2, $t2, 4
+	sw $t1, 0($t2) 
+	addi $t2, $t2, 4
+	sw $t1, 0($t2)
+	addi $t2, $t2, 120
+	sw $t1, 0($t2)
+	addi $t2, $t2, 8
+	sw $t1, 0($t2)
+	
 	jr $ra
 
 
