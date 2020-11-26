@@ -148,14 +148,6 @@ end_key:
 	# check collide, return 1 if collide with platform
 	la $t4, x_up
 	lw $t5, 0($t4)
-	#print x_up
-	li $v0, 1
-	move $a0, $t5
-	syscall
-	
-	li $v0, 4
-	la $a0, newline
-	syscall 
 	
 	bgtz $t5, update_dd
 	
@@ -170,7 +162,7 @@ end_key:
 # update new loc of doodler (increase) if collide
 pf_collide:
 	lw $t5, x_up
-	addi $t5, $t5, 11  # go up for 11 times
+	addi $t5, $t5, 12  # go up for 12 times
 	sw $t5, x_up
 	
 	
