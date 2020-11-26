@@ -12,9 +12,9 @@
 # - Display height in pixels: 256
 # - Base Address for Display: 0x10008000 ($gp)
 #
-# Which milestone is reached in this submission?
+# Which milestone is reached in this submission? 
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 1/2/3/4/5 (choose the one the applies)
+# - Milestone 123 
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
@@ -47,7 +47,7 @@ newline: .asciiz "\n"
 .text
 
 main:
-	# initialize first platform
+	# initialize platform
 	la $t1, pfpos
 	addi $t2, $zero, 64   # add x1 to pfpos
 	addi $t3, $zero, 30    # add y1 to pfpos
@@ -81,7 +81,7 @@ main:
 draw:
 	# draw background
 	lw $t0, displayAddress	# base address for display
-	lw $t1, bgcolor		# red 
+	lw $t1, bgcolor		# white 
 	
 	add $t2, $zero, $zero  # offset
 	add $t3, $zero, 4096  # limit
@@ -108,7 +108,7 @@ respond_to_J:  # j is pressed, player should go left
 	addi $t3, $t3, -4
 	blez $t3, go_to_right
 	j save_x_J
-go_to_right:
+go_to_right:  # go to right of screen
 	addi $t3, $t3, 128
 save_x_J:
 	sw $t3, ddpos_x
@@ -120,26 +120,26 @@ respond_to_K:  # k is pressed, player should go right
 	addi $t4, $zero, 128
 	bge $t3, $t4, go_to_left
 	j save_x_K
-go_to_left:
+go_to_left:  # go to left of screen
 	addi $t3, $t3, -128
 save_x_K:
 	sw $t3, ddpos_x
 	j end_key
 
 end_key:
-	# push random loc of platform to pfpos, draw platforms
+	# draw platforms
 	
 	
 	jal drawpf
 
 	
-	# calcullate loc
+	# calcullate loc of doodler
 	lw $t3, ddpos_x
 	lw $t4, ddpos_y
 	sll $t4, $t4, 7
 	
 	
-	# push loc of player to stack, draw player
+	# push loc of doodler to stack, draw doodler
 	add $t2, $t3, $t4
 	addi $sp, $sp, -4
 	sw $t2, 0($sp)
@@ -328,8 +328,8 @@ loop_pfpos:
 	addi $s4, $s3, 4  # t7: index of yi of pf
 	lw $t7, 0($s4)  #t7: yi of pf
 	
-	# y_pf=y_dd+3
-	addi $s0, $t2, 3  #y_dd+3
+	# y_pf = y_dd + 3
+	addi $s0, $t2, 3  # y_dd + 3
 	bne $s0, $t7, end_if
 	
 	# x_pf - 4 <= x_dd <= x_pf + 40
@@ -338,7 +338,7 @@ loop_pfpos:
 	addi $s1, $t6, 40
 	blt $s1, $t1, end_if
 	
-	# yes! they collide, push 1, end loop
+	# yes! they collide, push 1 to stack, end loop
 	addi $s2, $zero, 1
 	addi $sp, $sp, -4
 	sw $s2, 0($sp)
@@ -350,6 +350,7 @@ end_if:
 	
 	
 end_loop_pfpos:
+	# not collide, push 0 to stack
 	addi $s2, $zero, 0
 	addi $sp, $sp, -4
 	sw $s2, 0($sp)
