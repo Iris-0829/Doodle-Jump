@@ -146,6 +146,19 @@ end_key:
 	jal drawdd	
 	
 	# check collide, return 1 if collide with platform
+	la $t4, x_up
+	lw $t5, 0($t4)
+	#print x_up
+	li $v0, 1
+	move $a0, $t5
+	syscall
+	
+	li $v0, 4
+	la $a0, newline
+	syscall 
+	
+	bgtz $t5, update_dd
+	
 	jal is_collide
 	lw $t2, 0($sp)
 	addi $sp, $sp, 4 
@@ -157,7 +170,7 @@ end_key:
 # update new loc of doodler (increase) if collide
 pf_collide:
 	lw $t5, x_up
-	addi $t5, $t5, 13  # go up for 10 times
+	addi $t5, $t5, 11  # go up for 11 times
 	sw $t5, x_up
 	
 	
@@ -184,14 +197,14 @@ pf_drop:
 	la $t1, pfpos
 	add $s0, $zero, $zero  # counter for pair i
 	add $s1, $zero, 24  # limit for pair
-	add $s4, $zero, 32  # lower bound of screen 
+	add $s4, $zero, 31  # lower bound of screen 
 	
 dec_pf_pair:
 	bge $s0, $s1, end_dec_pc_pair
 	add $s3, $s0, $t1
 	#lw $t3, 0($s3)  # xi
 	lw $t4, 4($s3)  # yi
-	addi $t4, $t4, 4
+	addi $t4, $t4, 1
 	bgt $t4, $s4, generate_new  # yi > 32, randomly generate x
 	sw $t4, 4($s3)
 	j cont_loop
