@@ -6,10 +6,10 @@
 # Student: Yining Wang, 1005723175
 #
 # Bitmap Display Configuration:
-# - Unit width in pixels: 16					     
-# - Unit height in pixels: 16
-# - Display width in pixels: 512
-# - Display height in pixels: 512
+# - Unit width in pixels: 8					     
+# - Unit height in pixels: 8
+# - Display width in pixels: 256
+# - Display height in pixels: 256
 # - Base Address for Display: 0x10008000 ($gp)
 #
 # Which milestone is reached in this submission?
@@ -31,14 +31,6 @@
 #
 #####################################################################
 
-#
-# Bitmap Display Configuration:
-# - Unit width in pixels: 8
-# - Unit height in pixels: 8
-# - Display width in pixels: 256
-# - Display height in pixels: 256
-# - Base Address for Display: 0x10008000 ($gp) #
-
 .data
 displayAddress:	.word	0x10008000  # base address for display
 bgcolor: .word 0xffffff  # white
@@ -48,8 +40,9 @@ ddcolor: .word 0x0000ff  # blue
 ddpos_x: .word 100  # x of doodler
 x_up: .word 0   # if >0, x go up  if =0 x go down
 ddpos_y: .word 10  # y of doodler
-pfpos: .space 80  # array for platform pos: [x1, y1, x2, y2, ...]
+pfpos: .space 24  # array for platform pos: [x1, y1, x2, y2, x3, y3]
 
+newline: .asciiz "\n"
 
 .text
 
@@ -57,14 +50,36 @@ main:
 	# initialize first platform
 	la $t1, pfpos
 	addi $t2, $zero, 64   # add x1 to pfpos
-	addi $t3, $zero, 20   # add y1 to pfpos
+	addi $t3, $zero, 30    # add y1 to pfpos
 	sw $t2, 0($t1)
 	sw $t3, 4($t1)
+	
+	
+	li $v0, 42
+	li $a0, 0
+	li $a1, 21  # random x2 <= 21
+	syscall
+	move $t2, $a0
+	sll $t2, $t2, 2
+	sw $t2, 8($t1)
 
+	addi $t3, $zero, 20
+	sw $t3, 12($t1)
+	
+	li $v0, 42
+	li $a0, 0
+	li $a1, 21  # random x3 <= 21
+	syscall
+	move $t2, $a0
+	sll $t2, $t2, 2
+	sw $t2, 16($t1)
+
+	addi $t3, $zero, 10
+	sw $t3, 20($t1)
+
+	
 draw:
 	# draw background
-	#jal drawbg
-	#drawbg:        
 	lw $t0, displayAddress	# base address for display
 	lw $t1, bgcolor		# red 
 	
@@ -78,7 +93,6 @@ bg:
 	j bg
 	
 endbg:
-	#jr $ra
 	
 	# check keyboard press
 	lw $t8, 0xffff0000
@@ -103,7 +117,7 @@ save_x_J:
 respond_to_K:  # k is pressed, player should go right
 	lw $t3, ddpos_x
 	addi $t3, $t3, 4
-	addi $t4, $t4, 128
+	addi $t4, $zero, 128
 	bge $t3, $t4, go_to_left
 	j save_x_K
 go_to_left:
@@ -113,9 +127,7 @@ save_x_K:
 	j end_key
 
 end_key:
-
 	# push random loc of platform to pfpos, draw platforms
-
 	
 	
 	jal drawpf
@@ -159,10 +171,35 @@ update_no_collide:
 	sw $t4, ddpos_y
 	j sleep
 update_is_collide:
+	# if dd_x < 15, then dd_y remain same, but all platform drop
+	lw $t4, ddpos_y
+	addi $t6, $zero, 9
+	bge $t4, $t6, dd_rise
+	j pf_drop
+	
+pf_drop:
+	# decrease y1, y2, y3
+	la $t1, pfpos
+	lw $s0, 4($t1)
+	addi $s0, $s0, 4
+	sw $s0, 4($t1)
+	
+	lw $s0, 12($t1)
+	addi $s0, $s0, 4
+	sw $s0, 12($t1)
+	
+	lw $s0, 20($t1)
+	addi $s0, $s0, 4
+	sw $s0, 20($t1)
+	j decr_x_up
+dd_rise:
 	# update new loc of doodler (rise) if collide
 	lw $t4, ddpos_y
 	addi $t4, $t4, -1
 	sw $t4, ddpos_y	
+	j decr_x_up
+
+decr_x_up:	
 	# decrease x_up by 1
 	lw $t5, x_up
 	addi $t5, $t5, -1
@@ -190,14 +227,21 @@ redraw:
 
 
 #=========draw the platform================
-   
+
 drawpf: 
 	# load loc from stack
 	lw $t0, displayAddress  # base address
 	lw $t1, pfcolor  # green
 	la $t2, pfpos  # array
-	lw $t3, 0($t2)  # x1
-	lw $t4, 4($t2)  # y1
+	
+	add $s0, $zero, $zero  # counter for pair i
+	add $s1, $zero, 24  # limit for pair
+	
+pf_pair:
+	bge $s0, $s1, end_pf_pair
+	add $s3, $s0, $t2
+	lw $t3, 0($s3)  # x1
+	lw $t4, 4($s3)  # y1
 
 	sll $t4, $t4, 7
 	add $t4, $t3, $t4
@@ -216,6 +260,10 @@ pf:
 	j pf
 	
 endpf:
+	addi $s0, $s0, 8
+	j pf_pair
+	
+end_pf_pair:
 	jr $ra
 	
 	
