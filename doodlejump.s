@@ -37,7 +37,7 @@ bgcolor: .word 0xffffff  # white
 diecolor: .word 0x000000 # black
 pfcolor: .word 0x00ff00  # green
 ddcolor: .word 0x0000ff  # blue
-ddpos_x: .word 100  # x of doodler
+ddpos_x: .word 60  # x of doodler
 x_up: .word 0   # if >0, x go up  if =0 x go down
 ddpos_y: .word 10  # y of doodler
 pfpos: .space 24  # array for platform pos: [x1, y1, x2, y2, x3, y3]
@@ -138,6 +138,7 @@ end_key:
 	lw $t4, ddpos_y
 	sll $t4, $t4, 7
 	
+	
 	# push loc of player to stack, draw player
 	add $t2, $t3, $t4
 	addi $sp, $sp, -4
@@ -156,7 +157,7 @@ end_key:
 # update new loc of doodler (increase) if collide
 pf_collide:
 	lw $t5, x_up
-	addi $t5, $t5, 10  # go up for 10 times
+	addi $t5, $t5, 13  # go up for 10 times
 	sw $t5, x_up
 	
 	
@@ -171,7 +172,7 @@ update_no_collide:
 	sw $t4, ddpos_y
 	j sleep
 update_is_collide:
-	# if dd_x < 15, then dd_y remain same, but all platform drop
+	# if dd_x < 9, then dd_y remain same, but all platform drop
 	lw $t4, ddpos_y
 	addi $t6, $zero, 9
 	bge $t4, $t6, dd_rise
@@ -179,18 +180,37 @@ update_is_collide:
 	
 pf_drop:
 	# decrease y1, y2, y3
+	# if yi > 32, randomly gererate new pair and replace
 	la $t1, pfpos
-	lw $s0, 4($t1)
-	addi $s0, $s0, 4
-	sw $s0, 4($t1)
+	add $s0, $zero, $zero  # counter for pair i
+	add $s1, $zero, 24  # limit for pair
+	add $s4, $zero, 32  # lower bound of screen 
 	
-	lw $s0, 12($t1)
-	addi $s0, $s0, 4
-	sw $s0, 12($t1)
+dec_pf_pair:
+	bge $s0, $s1, end_dec_pc_pair
+	add $s3, $s0, $t1
+	#lw $t3, 0($s3)  # xi
+	lw $t4, 4($s3)  # yi
+	addi $t4, $t4, 4
+	bgt $t4, $s4, generate_new  # yi > 32, randomly generate x
+	sw $t4, 4($s3)
+	j cont_loop
+generate_new:
+	li $v0, 42
+	li $a0, 0
+	li $a1, 21  # random xi <= 21
+	syscall
+	move $t3, $a0
+	sll $t3, $t3, 2
+	sw $t3, 0($s3)
+	addi $t4, $t4, -30
+	sw $t4, 4($s3)
+
+cont_loop:
+	add $s0, $s0, 8
+	j dec_pf_pair
 	
-	lw $s0, 20($t1)
-	addi $s0, $s0, 4
-	sw $s0, 20($t1)
+end_dec_pc_pair:
 	j decr_x_up
 dd_rise:
 	# update new loc of doodler (rise) if collide
@@ -366,7 +386,7 @@ die_no_key:
 	
 respond_to_S:
 	# restart
-	addi $t1, $zero, 100
+	addi $t1, $zero, 60
 	addi $t2, $zero, 10
 	sw $t1, ddpos_x
 	sw $t2, ddpos_y
