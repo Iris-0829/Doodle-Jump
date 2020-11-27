@@ -48,7 +48,15 @@ add_score: .word 0  # if 1, then add score
 
 pix_0: .word 1,1,1,1,0,1,1,0,1,1,0,1,1,1,1  # 15 int representing pixels
 pix_1: .word 0,0,1,0,0,1,0,0,1,0,0,1,0,0,1
-scoreAddress:	.word	0x10008000  # base address for score
+pix_2: .word 1,1,1,0,0,1,1,1,1,1,0,0,1,1,1
+pix_3: .word 1,1,1,0,0,1,1,1,1,0,0,1,1,1,1
+pix_4: .word 1,0,1,1,0,1,1,1,1,0,0,1,0,0,1
+pix_5: .word 1,1,1,1,0,0,1,1,1,0,0,1,1,1,1
+pix_6: .word 1,1,1,1,0,0,1,1,1,1,0,1,1,1,1
+pix_7: .word 1,1,1,1,0,1,0,0,1,0,0,1,0,0,1
+pix_8: .word 1,1,1,1,0,1,1,1,1,1,0,1,1,1,1
+pix_9: .word 1,1,1,1,0,1,1,1,1,0,0,1,1,1,1
+scoreAddress:	.word	0x10008010  # base address for score
 
 newline: .asciiz "\n"
 
@@ -418,18 +426,53 @@ drawsc:
 	addi $t1, $t1, 1
 	beq $t2, $t1, loadtwo
 	addi $t1, $t1, 1
-	j loadzero  # this line will be deleted
+	beq $t2, $t1, loadthree
+	addi $t1, $t1, 1
+	beq $t2, $t1, loadfour
+	addi $t1, $t1, 1
+	beq $t2, $t1, loadfive
+	addi $t1, $t1, 1
+	beq $t2, $t1, loadsix
+	addi $t1, $t1, 1
+	beq $t2, $t1, loadseven
+	addi $t1, $t1, 1
+	beq $t2, $t1, loadeight
+	addi $t1, $t1, 1
+	j loadnine  
 	
 loadzero:
 	la $s0, pix_0
 	j finish_load
 loadone:
-	la $s0, pix_0
+	la $s0, pix_1
 	j finish_load
 loadtwo:
-	la $s0, pix_0	
+	la $s0, pix_2
 	j finish_load
+loadthree:
+	la $s0, pix_3
+	j finish_load
+loadfour:
+	la $s0, pix_4
+	j finish_load
+loadfive:
+	la $s0, pix_5
+	j finish_load
+loadsix:
+	la $s0, pix_6
+	j finish_load
+loadseven:
+	la $s0, pix_7
+	j finish_load
+loadeight:
+	la $s0, pix_8
+	j finish_load
+loadnine:
+	la $s0, pix_9
+	j finish_load
+
 	
+
 finish_load: 
 	# len 15 array is in s0 now
 	lw $t4, scoreAddress  # address for score
@@ -457,7 +500,7 @@ not_draw_pix:
 end_scoreloop:
 	
         # draw ten place
-			
+	
 	jr $ra
 						
 	
