@@ -188,15 +188,6 @@ skip_add_score:
 	li $v0, 4
 	la $a0, newline
 	syscall 
-	li $v0, 1
-	move $a0, $t7
-	syscall
-	li $v0, 4
-	la $a0, newline
-	syscall 
-	li $v0, 4
-	la $a0, newline
-	syscall 
 	
 	
 update_dd:
@@ -447,10 +438,10 @@ respond_to_S:
 	addi $t2, $zero, 10
 	sw $t1, ddpos_x
 	sw $t2, ddpos_y
-	#sw $zero, score
-	#lw $t3, collide_pf
-	#sw $zero, 0($t3)
-	#sw $zero, 4($t3)
+	sw $zero, score
+	la $t3, collide_pf
+	sw $zero, 0($t3)
+	sw $zero, 4($t3)
 	jr $ra
 
 
