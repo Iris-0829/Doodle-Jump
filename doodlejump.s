@@ -42,6 +42,11 @@ x_up: .word 0   # if >0, x go up  if =0 x go down
 ddpos_y: .word 10  # y of doodler
 pfpos: .space 24  # array for platform pos: [x1, y1, x2, y2, x3, y3]
 
+score: .word 0
+collide_pf: .space 8  # store address of current collide pf in pfpos
+add_score: .word 0  # if 1, then add score
+pix_0: .word 1,1,1,1,0,1,1,0,1,1,0,1,1,1,1  # 15 int representing pixels
+
 newline: .asciiz "\n"
 
 .text
@@ -164,6 +169,34 @@ pf_collide:
 	lw $t5, x_up
 	addi $t5, $t5, 12  # go up for 12 times
 	sw $t5, x_up
+	
+	# score += 1
+	# problem: score increase each time it collide
+	# if add_score != 0, score += 1
+	
+	lw $t7, add_score
+	lw $t6, score
+	beqz $t7, skip_add_score
+	addi $t6, $t6, 1
+	sw $t6, score
+	
+skip_add_score:	
+	# print score and add score
+	li $v0, 1
+	move $a0, $t6
+	syscall
+	li $v0, 4
+	la $a0, newline
+	syscall 
+	li $v0, 1
+	move $a0, $t7
+	syscall
+	li $v0, 4
+	la $a0, newline
+	syscall 
+	li $v0, 4
+	la $a0, newline
+	syscall 
 	
 	
 update_dd:
@@ -317,6 +350,7 @@ is_collide:
 	lw $t1, ddpos_x  # x of dd
 	lw $t2, ddpos_y  # y of dd
 	la $t3, pfpos    # array of platform pos
+
 	
 	add $t4, $zero, $zero  # counter
 	addi $t5, $zero, 80  # limit for loop over pfpos
@@ -325,7 +359,7 @@ loop_pfpos:
 	bge $t4, $t5, end_loop_pfpos
 	add $s3, $t3, $t4  # s3: index of xi of pf
 	lw $t6, 0($s3)  #t6: xi of pf
-	addi $s4, $s3, 4  # t7: index of yi of pf
+	addi $s4, $s3, 4  # s4: index of yi of pf
 	lw $t7, 0($s4)  #t7: yi of pf
 	
 	# y_pf = y_dd + 3
@@ -342,6 +376,23 @@ loop_pfpos:
 	addi $s2, $zero, 1
 	addi $sp, $sp, -4
 	sw $s2, 0($sp)
+	# check if collide with same platform
+	la $t8, collide_pf
+	lw $s5, 0($t8)  # previous colliding xi
+	lw $s6, 4($t8)  # previous colliding yi
+	# if same as current, add_score is 0
+	# else add_score is 1, update collide_pf
+	bne $s5, $s3, do_add_score
+	bne $s6, $s4, do_add_score
+	# not add score
+	sw $zero, add_score
+	j after_score
+	# store the address [xi, yi] into collide_pf
+do_add_score:
+	sw $s2, add_score  # 1
+	sw $s3, 0($t8)
+	sw $s4, 4($t8)
+after_score:
 	jr $ra
 	
 end_if:
@@ -391,11 +442,15 @@ die_no_key:
 	j die_loop
 	
 respond_to_S:
-	# restart
+	# restart the game
 	addi $t1, $zero, 60
 	addi $t2, $zero, 10
 	sw $t1, ddpos_x
 	sw $t2, ddpos_y
+	#sw $zero, score
+	#lw $t3, collide_pf
+	#sw $zero, 0($t3)
+	#sw $zero, 4($t3)
 	jr $ra
 
 
