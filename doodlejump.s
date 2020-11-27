@@ -45,7 +45,10 @@ pfpos: .space 24  # array for platform pos: [x1, y1, x2, y2, x3, y3]
 score: .word 0
 collide_pf: .space 8  # store address of current collide pf in pfpos
 add_score: .word 0  # if 1, then add score
+
 pix_0: .word 1,1,1,1,0,1,1,0,1,1,0,1,1,1,1  # 15 int representing pixels
+pix_1: .word 0,0,1,0,0,1,0,0,1,0,0,1,0,0,1
+scoreAddress:	.word	0x10008000  # base address for score
 
 newline: .asciiz "\n"
 
@@ -133,8 +136,6 @@ save_x_K:
 
 end_key:
 	# draw platforms
-	
-	
 	jal drawpf
 
 	
@@ -170,8 +171,6 @@ pf_collide:
 	addi $t5, $t5, 12  # go up for 12 times
 	sw $t5, x_up
 	
-	# score += 1
-	# problem: score increase each time it collide
 	# if add_score != 0, score += 1
 	
 	lw $t7, add_score
@@ -253,10 +252,14 @@ decr_x_up:
 	lw $t5, x_up
 	addi $t5, $t5, -1
 	sw $t5, x_up
+
 	
 	j sleep	
 	
 sleep:	
+	# dispaly score
+	jal drawsc
+	
 	# sleep
 	li $v0, 32
 	li $a0, 50
@@ -397,6 +400,68 @@ end_loop_pfpos:
 	addi $sp, $sp, -4
 	sw $s2, 0($sp)
 	jr $ra
+	
+	
+#===========draw score=================
+drawsc:
+	lw $t0, score
+	addi $t1, $zero, 10
+	div $t0, $t1
+	mfhi $t2  # t2: remainder, one place
+	mflo $t3  # t3: quotient, ten place
+	addi $t1, $zero, 1 # 1
+	
+	# know decimal num, get pix_i
+	# one place
+	beqz $t2, loadzero
+	beq $t2, $t1, loadone
+	addi $t1, $t1, 1
+	beq $t2, $t1, loadtwo
+	addi $t1, $t1, 1
+	j loadzero  # this line will be deleted
+	
+loadzero:
+	la $s0, pix_0
+	j finish_load
+loadone:
+	la $s0, pix_0
+	j finish_load
+loadtwo:
+	la $s0, pix_0	
+	j finish_load
+	
+finish_load: 
+	# len 15 array is in s0 now
+	lw $t4, scoreAddress  # address for score
+	lw $t5, diecolor  # black
+	# first calculate x,y (max[4,2])
+	add $t1, $zero, $zero  # counter
+	addi $t6, $zero, 60  # limit
+	addi $t7, $zero, 12  # divider
+scoreloop:
+	bge $t1, $t6, end_scoreloop
+	add $t8, $t1, $s0  # index in array
+	lw $t8, 0($t8)   # 0 or 1 in array
+	beqz $t8, not_draw_pix
+	div $t1, $t7
+	mfhi $a1  # y
+	mflo $a2  # x
+	sll $a2, $a2, 7
+	add $a1, $a2, $a1  # 128x + y is offset
+	add $a3, $a1, $t4  # address to draw
+	sw $t5, 0($a3)  # draw black
+not_draw_pix:
+	addi $t1, $t1, 4
+	j scoreloop
+	
+end_scoreloop:
+	
+        # draw ten place
+			
+	jr $ra
+						
+	
+	
 
 #==============doodler died=============
 died:
