@@ -419,6 +419,10 @@ drawsc:
 	mflo $t3  # t3: quotient, ten place
 	addi $t1, $zero, 1 # 1
 	
+	lw $t4, scoreAddress  # address for score
+	add $t9, $zero, $zero
+
+draw_digit:
 	# know decimal num, get pix_i
 	# one place
 	beqz $t2, loadzero
@@ -475,7 +479,7 @@ loadnine:
 
 finish_load: 
 	# len 15 array is in s0 now
-	lw $t4, scoreAddress  # address for score
+	#lw $t4, scoreAddress  # address for score
 	lw $t5, diecolor  # black
 	# first calculate x,y (max[4,2])
 	add $t1, $zero, $zero  # counter
@@ -498,9 +502,14 @@ not_draw_pix:
 	j scoreloop
 	
 end_scoreloop:
-	
         # draw ten place
-	
+        bnez $t9, end_drawsc
+	move $t2, $t3
+	lw $t4, displayAddress
+	addi $t9, $zero, 1
+	addi $t1, $zero, 1
+	j draw_digit
+end_drawsc:	
 	jr $ra
 						
 	
