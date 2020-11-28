@@ -46,7 +46,7 @@ score: .word 0
 collide_pf: .space 8  # store address of current collide pf in pfpos
 add_score: .word 0  # if 1, then add score
 
-pix_0: .word 1,1,1,1,0,1,1,0,1,1,0,1,1,1,1  # 15 int representing pixels
+pix_0: .word 1,1,1,1,0,1,1,0,1,1,0,1,1,1,1  # 0 on screen with 15 pix
 pix_1: .word 0,0,1,0,0,1,0,0,1,0,0,1,0,0,1
 pix_2: .word 1,1,1,0,0,1,1,1,1,1,0,0,1,1,1
 pix_3: .word 1,1,1,0,0,1,1,1,1,0,0,1,1,1,1
@@ -56,7 +56,7 @@ pix_6: .word 1,1,1,1,0,0,1,1,1,1,0,1,1,1,1
 pix_7: .word 1,1,1,1,0,1,0,0,1,0,0,1,0,0,1
 pix_8: .word 1,1,1,1,0,1,1,1,1,1,0,1,1,1,1
 pix_9: .word 1,1,1,1,0,1,1,1,1,0,0,1,1,1,1
-scoreAddress:	.word	0x10008010  # base address for score
+scoreAddress:	.word	0x10008010  # base address for score (one's)
 
 newline: .asciiz "\n"
 
@@ -183,18 +183,9 @@ pf_collide:
 	
 	lw $t7, add_score
 	lw $t6, score
-	beqz $t7, skip_add_score
+	beqz $t7, update_dd
 	addi $t6, $t6, 1
 	sw $t6, score
-	
-skip_add_score:	
-	# print score and add score
-	li $v0, 1
-	move $a0, $t6
-	syscall
-	li $v0, 4
-	la $a0, newline
-	syscall 
 	
 	
 update_dd:
@@ -265,7 +256,7 @@ decr_x_up:
 	j sleep	
 	
 sleep:	
-	# dispaly score
+	# display score
 	jal drawsc
 	
 	# sleep
@@ -417,10 +408,10 @@ drawsc:
 	div $t0, $t1
 	mfhi $t2  # t2: remainder, one place
 	mflo $t3  # t3: quotient, ten place
-	addi $t1, $zero, 1 # 1
+	addi $t1, $zero, 1 # initialize t1 to 1
 	
 	lw $t4, scoreAddress  # address for score
-	add $t9, $zero, $zero
+	add $t9, $zero, $zero  # initialize t9 to 0
 
 draw_digit:
 	# know decimal num, get pix_i
@@ -479,9 +470,8 @@ loadnine:
 
 finish_load: 
 	# len 15 array is in s0 now
-	#lw $t4, scoreAddress  # address for score
 	lw $t5, diecolor  # black
-	# first calculate x,y (max[4,2])
+	# first calculate x,y ([0,0] to [4,2])
 	add $t1, $zero, $zero  # counter
 	addi $t6, $zero, 60  # limit
 	addi $t7, $zero, 12  # divider
@@ -502,12 +492,11 @@ not_draw_pix:
 	j scoreloop
 	
 end_scoreloop:
-        # draw ten place
-        bnez $t9, end_drawsc
-	move $t2, $t3
-	lw $t4, displayAddress
-	addi $t9, $zero, 1
-	addi $t1, $zero, 1
+        bnez $t9, end_drawsc  # if t9 is 1, end function
+	move $t2, $t3   # draw ten's place
+	lw $t4, displayAddress  # address of ten's place
+	addi $t9, $zero, 1  # set t9 to 1
+	addi $t1, $zero, 1  # reset t1
 	j draw_digit
 end_drawsc:	
 	jr $ra
