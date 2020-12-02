@@ -41,6 +41,7 @@ ddpos_x: .word 60  # x of doodler
 x_up: .word 0   # if >0, x go up  if =0 x go down
 ddpos_y: .word 10  # y of doodler
 pfpos: .space 24  # array for platform pos: [x1, y1, x2, y2, x3, y3]
+move_pf_index: .word 0, 0, 0  # corresponding to i th pf can move 
 
 score: .word 0
 collide_pf: .space 8  # store address of current collide pf in pfpos
@@ -252,10 +253,108 @@ decr_x_up:
 	addi $t5, $t5, -1
 	sw $t5, x_up
 
-	
 	j sleep	
 	
 sleep:	
+	# if score >= 10, add one move block
+	lw $t1, score
+	
+	
+	li $v0, 1
+	move $a0, $t1
+	syscall
+	
+	li $v0, 4
+	la $a0, newline
+	syscall 
+	
+	addi $t2, $zero, 10
+	addi $t5, $zero, 1
+	beq $t1, $t2, add_move_one
+	addi $t2, $t2, 10
+	beq $t1, $t2, add_move_two
+	addi $t2, $t2, 10
+	beq $t1, $t2, add_move_three
+	j end_add_move
+
+add_move_one:
+	la $t3, move_pf_index
+	addi $t4, $zero, 8
+	add $t4, $t3, $t4
+	lw $t6, 0($t4)
+	bne $t6, $zero, end_add_move
+	sw $t5, 0($t4)
+	j end_add_move
+
+add_move_two:
+	la $t3, move_pf_index
+	addi $t4, $zero, 4
+	add $t4, $t3, $t4
+	lw $t6, 0($t4)
+	bne $t6, $zero, end_add_move
+	sw $t5, 0($t4)
+	j end_add_move
+	
+add_move_three:
+	la $t3, move_pf_index
+	addi $t4, $zero, 0
+	add $t4, $t3, $t4
+	lw $t6, 0($t4)
+	bne $t6, $zero, end_add_move
+	sw $t5, 0($t4)
+	j end_add_move
+
+
+end_add_move:
+	# if pf i is move, then update xi
+	la $t1, move_pf_index
+	add $t2, $zero, $zero  # counter
+	addi $t3, $zero, 12  # limit of move_pf_index
+	la $s1, pfpos
+	
+	
+move_loop:
+	bge $t2, $t3, finish_move
+	add $t4, $t2, $t1  # index of move_pf_index
+	lw $t5, 0($t4)  # 0 or 1 or -1
+	bgt $t5, $zero, move_right_pf_x  # 1, then update xi
+	blt $t5, $zero, move_left_pf_x
+	j no_update_x
+move_right_pf_x:
+	sll $s2, $t2, 1
+	add $s3, $s2, $s1 
+	lw $s4, 0($s3)  # x_i
+	addi $s4, $s4, 4
+	# if x_i >= 92, then change move_pf_index to -1(move to left)
+	sw $s4, 0($s3)
+	addi $s6, $zero, 92
+	bge $s4, $s6, change_to_left
+	j no_update_x
+change_to_left:
+	addi $s5, $zero, -1
+	sw $s5, 0($t4)
+	
+move_left_pf_x:
+	sll $s2, $t2, 1
+	add $s3, $s2, $s1 
+	lw $s4, 0($s3)  # x_i
+	addi $s4, $s4, -4
+	# if x_i < 0, then change move_pf_index to -1(move to left)
+	sw $s4, 0($s3)
+	ble $s4, $zero, change_to_right
+	j no_update_x
+change_to_right:
+	addi $s5, $zero, 1
+	sw $s5, 0($t4)
+	
+no_update_x:
+	addi $t2, $t2, 4
+	j move_loop
+	
+finish_move:
+	
+
+
 	# display score
 	jal drawsc
 	
@@ -548,6 +647,10 @@ respond_to_S:
 	la $t3, collide_pf
 	sw $zero, 0($t3)
 	sw $zero, 4($t3)
+	la $t1, move_pf_index
+	sw $zero, 0($t1)
+	sw $zero, 4($t1)
+	sw $zero, 8($t1)
 	jr $ra
 
 
