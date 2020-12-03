@@ -217,6 +217,18 @@ pf_drop:
 	add $s1, $zero, 24  # limit for pair
 	add $s4, $zero, 31  # lower bound of screen 
 	
+	# also decrease monster y
+	la $s6, ms_pos
+	lw $t8, 4($s6)
+	beqz $t8, dec_pf_pair
+	addi $t8, $t8, 1
+	sw $t8, 4($s6)
+	# if > 32, set to 0
+	addi $t9, $zero, 32
+	ble $t8, $t9, dec_pf_pair
+	sw $zero, 4($s6)
+	
+	
 dec_pf_pair:
 	bge $s0, $s1, end_dec_pc_pair
 	add $s3, $s0, $t1
