@@ -376,7 +376,7 @@ go_draw_ms:
 	
 	addi $t3, $zero, 1
 	bne $t2, $t3, no_collide_ms
-	jal died
+	#jal died
 no_collide_ms:
 #=========================
 	
@@ -385,7 +385,7 @@ no_collide_ms:
 not_draw_ms:
 	li $v0, 42
 	li $a0, 0
-	li $a1, 100  # if a1 is 1, then generate monster
+	li $a1, 10  # if a1 is 1, then generate monster
 	syscall
 	addi $t1, $zero, 1  # constant 1
 	beq $a0, $t1, generate_ms
