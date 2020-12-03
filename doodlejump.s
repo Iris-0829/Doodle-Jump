@@ -59,6 +59,9 @@ pix_8: .word 1,1,1,1,0,1,1,1,1,1,0,1,1,1,1
 pix_9: .word 1,1,1,1,0,1,1,1,1,0,0,1,1,1,1
 scoreAddress:	.word	0x10008010  # base address for score (one's)
 
+ms_pos: .word 0, 0  # x, y position of monster 0,0 means no monster
+mscolor: .word 0x785027  # brown
+
 newline: .asciiz "\n"
 
 .text
@@ -256,17 +259,8 @@ decr_x_up:
 	j sleep	
 	
 sleep:	
-	# if score >= 10, add one move block
+	# if score is 10 or 20 or 30, add a move block
 	lw $t1, score
-	
-	
-	li $v0, 1
-	move $a0, $t1
-	syscall
-	
-	li $v0, 4
-	la $a0, newline
-	syscall 
 	
 	addi $t2, $zero, 10
 	addi $t5, $zero, 1
@@ -352,9 +346,51 @@ no_update_x:
 	j move_loop
 	
 finish_move:
+
+	# randomly generate monster (<=1)
+	la $t2, ms_pos  # address of ms_pos
+	lw $t4, 4($t2)  # y of ms pos
+	bnez $t4, go_draw_ms  # y != 0 -> have a monster now
+	j not_draw_ms
+go_draw_ms:
+	jal draw_ms  # function to draw monster
+	# update position of mos
+	# x move left and right, y together with pf until > 32, then become 0
+	jal update_ms_x
+	# check if doodler collide with monster, if return 1, then die
+	jal is_collide_with_ms
+	lw $t2, 0($sp)
+	addi $sp, $sp, 4 
 	
+	addi $t3, $zero, 1
+	bne $t2, $t3, no_collide_ms
+	jal died
+no_collide_ms:
+#=========================
+	
+	
+	j display_score
+not_draw_ms:
+	li $v0, 42
+	li $a0, 0
+	li $a1, 7  # if a1 is 1, then generate monster
+	syscall
+	addi $t1, $zero, 1  # constant 1
+	beq $a0, $t1, generate_ms
+	j display_score
+generate_ms:
+	li $v0, 42
+	li $a0, 0
+	li $a1, 21  # random ms xi <= 21
+	syscall
+	move $t3, $a0
+	sll $t3, $t3, 2
+	sw $t3, 0($t2)  # x of ms
+	sw $t1, 4($t2)  # y of ms is 1 by default
+	
+				
 
-
+display_score:
 	# display score
 	jal drawsc
 	
@@ -436,6 +472,38 @@ drawdd:
 	sw $t1, 260($t2)
 	
 	jr $ra
+	
+#=========draw the monster================
+draw_ms:
+	lw $t0, displayAddress
+	la $t1, ms_pos
+	lw $t2, mscolor  # brown
+	lw $t3, 0($t1)  # x of ms
+	lw $t4, 4($t1)  # y of ms
+	
+	# draw brown pixel at x, y
+	
+	sll $t4, $t4, 7
+	add $t5, $t3, $t4 
+	add $t5, $t5, $t0  # address of ms
+	sw $t2, 0($t5)
+	
+	jr $ra
+
+#=========update x of monster=======================
+update_ms_x:
+	la $t1, ms_pos
+	lw $t2, 0($t1)  # x of ms
+	addi $t2, $t2, 4
+	sw $t2, 0($t1)
+	
+	addi $t3, $zero, 128
+	bge $t2, $t3, monster_to_left
+	jr $ra
+monster_to_left:
+	sw $zero, 0($t1)
+	jr $ra
+
 
 #=======check if doodler collide with platform======
 is_collide:
@@ -499,7 +567,33 @@ end_loop_pfpos:
 	sw $s2, 0($sp)
 	jr $ra
 	
+#=============check if ms collide with doodler=================
+is_collide_with_ms:
+	# return 1 if collide, return 0 if not
+	la $t0, ms_pos
+	lw $t1, ddpos_x  # x of doodler
+	lw $t2, ddpos_y  # y of doodler
+	lw $t3, 0($t0)  # x of monster
+	lw $t4, 4($t0)  # y of monster
 	
+	addi $s1, $t3, -1
+	addi $s2, $t3, 1
+	addi $s3, $t4, 2
+	
+	blt $t1, $s1, not_collide_ms
+	bgt $t1, $s2, not_collide_ms
+	blt $t2, $t4, not_collide_ms
+	bgt $t2, $s3, not_collide_ms
+	# yes! they collide, return 1
+	addi $s4, $zero, 1
+	addi $sp, $sp, -4
+	sw $s4, 0($sp)
+	jr $ra
+not_collide_ms:
+	addi $s4, $zero, 0
+	addi $sp, $sp, -4
+	sw $s4, 0($sp)
+	jr $ra
 #===========draw score=================
 drawsc:
 	lw $t0, score
@@ -651,6 +745,9 @@ respond_to_S:
 	sw $zero, 0($t1)
 	sw $zero, 4($t1)
 	sw $zero, 8($t1)
+	la $t1, ms_pos
+	sw $zero, 0($t1)
+	sw $zero, 4($t1)	
 	jr $ra
 
 
