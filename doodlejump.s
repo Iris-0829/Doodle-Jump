@@ -385,7 +385,7 @@ no_collide_ms:
 not_draw_ms:
 	li $v0, 42
 	li $a0, 0
-	li $a1, 7  # if a1 is 1, then generate monster
+	li $a1, 100  # if a1 is 1, then generate monster
 	syscall
 	addi $t1, $zero, 1  # constant 1
 	beq $a0, $t1, generate_ms
@@ -588,14 +588,14 @@ is_collide_with_ms:
 	lw $t3, 0($t0)  # x of monster
 	lw $t4, 4($t0)  # y of monster
 	
-	addi $s1, $t3, -1
-	addi $s2, $t3, 1
-	addi $s3, $t4, 2
+	addi $s1, $t3, -4
+	addi $s2, $t3, 4
+	addi $s3, $t4, -2
 	
 	blt $t1, $s1, not_collide_ms
 	bgt $t1, $s2, not_collide_ms
-	blt $t2, $t4, not_collide_ms
-	bgt $t2, $s3, not_collide_ms
+	bgt $t2, $t4, not_collide_ms
+	blt $t2, $s3, not_collide_ms
 	# yes! they collide, return 1
 	addi $s4, $zero, 1
 	addi $sp, $sp, -4
