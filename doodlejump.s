@@ -335,6 +335,22 @@ decr_x_up:
 	j sleep	
 	
 sleep:	
+	la $t0, shd_pos
+	lw $t1, 0($t0)  # x
+	lw $t2, 4($t0)  # y
+	
+	# generate shield if x = y = 0
+	bnez $t1, go_update_shd
+	bnez $t2, go_update_shd
+	jal generate_shd
+	j end_shd
+go_update_shd:
+	# update pos of shield if x, y != 0, 0
+	jal update_shd
+
+end_shd:
+
+
 	# draw bullet
 	jal update_bullet
 	jal bullet_collide_ms
@@ -885,6 +901,60 @@ draw_a_shd:
 end_draw_a_shd:
 	jr $ra
 
+
+#=============randomly generate shield============
+generate_shd:
+	li $v0, 42
+	li $a0, 0
+	li $a1, 50
+	syscall
+	move $t0, $a0
+	# if t0 is 1, then generate new shd
+	addi $t1, $zero, 1
+	bne $t0, $t1, end_generate_shd
+	
+	# always at pf:[x3 + 20, y3 - 1]
+	la $t2, pfpos
+	lw $s0, 16($t2)  # x3
+	lw $s1, 20($t2)  # y3
+	addi $s0, $s0, 20
+	addi $s1, $s1, -1
+	
+	la $t3, shd_pos  # address of shd
+	sw $s0, 0($t3)
+	sw $s1, 4($t3)
+	
+
+end_generate_shd:
+	jr $ra
+
+
+#============update pos of shd============
+update_shd:
+	# always at pf:[x3 + 20, y3 - 1]
+	la $t2, pfpos
+	lw $s0, 16($t2)  # x3
+	lw $s1, 20($t2)  # y3
+	addi $s0, $s0, 20
+	addi $s1, $s1, -1
+	
+	la $t3, shd_pos  # address of shd
+	# if y > 32, become (0, 0)
+	addi $t4, $zero, 30
+	bge $s1, $t4, reset_shd
+	j set_shd_pos
+reset_shd:
+	sw $zero, 0($t3)
+	sw $zero, 4($t3)
+	jr $ra
+set_shd_pos:	
+	sw $s0, 0($t3)
+	sw $s1, 4($t3)
+
+	jr $ra
+
+	
+
 	
 #==============doodler died=============
 died:
@@ -969,6 +1039,9 @@ respond_to_S:
 	sw $zero, 20($t1)
 	sw $zero, 24($t1)
 	sw $zero, 28($t1)
+	la $t1, shd_pos
+	sw $zero, 0($t1)
+	sw $zero, 4($t1)	
 	jr $ra
 
 
