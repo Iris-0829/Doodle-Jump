@@ -645,6 +645,10 @@ end_loop_pfpos:
 #=============check if ms collide with doodler=================
 is_collide_with_ms:
 	# return 1 if collide, return 0 if not
+	# if dd_protected > 0, return 0
+	lw $s0, dd_protected
+	bgtz $s0, not_collide_ms
+	
 	la $t0, ms_pos
 	lw $t1, ddpos_x  # x of doodler
 	lw $t2, ddpos_y  # y of doodler
