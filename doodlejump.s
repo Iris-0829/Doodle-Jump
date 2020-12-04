@@ -68,6 +68,7 @@ blcolor: .word 0x3c0aa4  # purple
 
 shd_pos: .word 0, 0  # x, y pos of shield
 shdcolor: .word 0x37fbb3  # dark green
+dd_protected: .word 0  # 0 means not protected
 
 newline: .asciiz "\n"
 
@@ -343,12 +344,17 @@ sleep:
 	bnez $t1, go_update_shd
 	bnez $t2, go_update_shd
 	jal generate_shd
-	j end_shd
+	j end_update_shd
 go_update_shd:
 	# update pos of shield if x, y != 0, 0
 	jal update_shd
 
-end_shd:
+end_update_shd:
+	# check if shd collide with doodler
+	# if collide, shd reset to (0, 0), dd_protected is 20
+	# doodler become green for 20 times, won't die on monster
+	# dd_protected should decrease by 1 every loop until 0
+	jal collide_shd_dd
 
 
 	# draw bullet
@@ -924,7 +930,6 @@ generate_shd:
 	sw $s0, 0($t3)
 	sw $s1, 4($t3)
 	
-
 end_generate_shd:
 	jr $ra
 
@@ -950,9 +955,35 @@ reset_shd:
 set_shd_pos:	
 	sw $s0, 0($t3)
 	sw $s1, 4($t3)
-
 	jr $ra
 
+#===========check if shd pixel collide with dd==========
+collide_shd_dd:
+	la $t0, shd_pos
+	lw $t1, 0($t0)  # x_shd
+	lw $t2, 4($t0)  # y_shd
+	lw $t3, ddpos_x # x_dd
+	lw $t4, ddpos_y # y_dd
+	
+	addi $t5, $t3, -4  # x_dd - 4
+	addi $t6, $t3, 4  # x_dd + 4
+	addi $t7, $t4, 3  # y_dd + 3
+	
+	blt $t1, $t5, not_collide_shd_dd
+	bgt $t1, $t6, not_collide_shd_dd
+	blt $t2, $t4, not_collide_shd_dd
+	bgt $t2, $t7, not_collide_shd_dd
+	# yes! dd collide with shd
+	addi $t7, $zero, 20
+	sw $t7, dd_protected
+	# reset shd to 0,0
+	sw $zero, 0($t0)  # x_shd
+	sw $zero, 4($t0)  # y_shd
+
+
+not_collide_shd_dd:
+	jr $ra
+	
 	
 
 	
