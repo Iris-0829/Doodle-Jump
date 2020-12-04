@@ -165,7 +165,6 @@ end_key:
 	jal draw_bullet
 	# draw shield pixel
 	jal draw_shield
-
 	
 	# calcullate loc of doodler
 	lw $t3, ddpos_x
@@ -179,6 +178,55 @@ end_key:
 	sw $t2, 0($sp)
 	jal drawdd	
 	
+	
+	
+	# randomly generate monster (<=1)
+	la $t2, ms_pos  # address of ms_pos
+	lw $t4, 4($t2)  # y of ms pos
+	bnez $t4, go_draw_ms  # y != 0 -> have a monster now
+	j not_draw_ms
+go_draw_ms:
+	jal draw_ms  # function to draw monster
+	# update position of mos if score > 15
+	lw $s0, score
+	addi $s1, $zero, 15
+	blt $s0, $s1, not_move_ms  # skip update ms
+	# x move left and right, y together with pf until > 32, then become 0
+	jal update_ms_x
+	# check if doodler collide with monster, if return 1, then die
+not_move_ms:
+	jal is_collide_with_ms
+	lw $t2, 0($sp)
+	addi $sp, $sp, 4 
+	
+	addi $t3, $zero, 1
+	bne $t2, $t3, no_collide_ms
+	jal died
+no_collide_ms:
+	j end_ms
+	
+not_draw_ms:
+	li $v0, 42
+	li $a0, 0
+	li $a1, 30  # if a1 is 1, then generate monster
+	syscall
+	addi $t1, $zero, 1  # constant 1
+	beq $a0, $t1, generate_ms
+	j end_ms
+generate_ms:
+	li $v0, 42
+	li $a0, 0
+	li $a1, 21  # random ms xi <= 21
+	syscall
+	move $t3, $a0
+	sll $t3, $t3, 2
+	sw $t3, 0($t2)  # x of ms
+	sw $t1, 4($t2)  # y of ms is 1 by default
+	
+end_ms:	
+
+	
+
 	# check collide, return 1 if collide with platform
 	la $t4, x_up
 	lw $t5, 0($t4)
@@ -379,52 +427,7 @@ no_update_x:
 	
 finish_move:
 
-	# randomly generate monster (<=1)
-	la $t2, ms_pos  # address of ms_pos
-	lw $t4, 4($t2)  # y of ms pos
-	bnez $t4, go_draw_ms  # y != 0 -> have a monster now
-	j not_draw_ms
-go_draw_ms:
-	jal draw_ms  # function to draw monster
-	# update position of mos if score > 15
-	lw $s0, score
-	addi $s1, $zero, 15
-	blt $s0, $s1, not_move_ms  # skip update ms
-	# x move left and right, y together with pf until > 32, then become 0
-	jal update_ms_x
-	# check if doodler collide with monster, if return 1, then die
-not_move_ms:
-	jal is_collide_with_ms
-	lw $t2, 0($sp)
-	addi $sp, $sp, 4 
 	
-	addi $t3, $zero, 1
-	bne $t2, $t3, no_collide_ms
-	jal died
-no_collide_ms:
-#=========================
-	
-	
-	j display_score
-not_draw_ms:
-	li $v0, 42
-	li $a0, 0
-	li $a1, 30  # if a1 is 1, then generate monster
-	syscall
-	addi $t1, $zero, 1  # constant 1
-	beq $a0, $t1, generate_ms
-	j display_score
-generate_ms:
-	li $v0, 42
-	li $a0, 0
-	li $a1, 21  # random ms xi <= 21
-	syscall
-	move $t3, $a0
-	sll $t3, $t3, 2
-	sw $t3, 0($t2)  # x of ms
-	sw $t1, 4($t2)  # y of ms is 1 by default
-	
-				
 
 display_score:
 	# display score
