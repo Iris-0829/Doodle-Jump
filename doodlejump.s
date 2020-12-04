@@ -59,6 +59,7 @@ pix_8: .word 1,1,1,1,0,1,1,1,1,1,0,1,1,1,1
 pix_9: .word 1,1,1,1,0,1,1,1,1,0,0,1,1,1,1
 scoreAddress:	.word	0x10008010  # base address for score (one's)
 
+#ms_is_moveL: .word 0   # 0: not moving monster, 1: moving (score > 15)
 ms_pos: .word 0, 0  # x, y position of monster 0,0 means no monster
 mscolor: .word 0x785027  # brown
 
@@ -366,17 +367,21 @@ finish_move:
 	j not_draw_ms
 go_draw_ms:
 	jal draw_ms  # function to draw monster
-	# update position of mos
+	# update position of mos if score > 15
+	lw $s0, score
+	addi $s1, $zero, 15
+	blt $s0, $s1, not_move_ms  # skip update ms
 	# x move left and right, y together with pf until > 32, then become 0
 	jal update_ms_x
 	# check if doodler collide with monster, if return 1, then die
+not_move_ms:
 	jal is_collide_with_ms
 	lw $t2, 0($sp)
 	addi $sp, $sp, 4 
 	
 	addi $t3, $zero, 1
 	bne $t2, $t3, no_collide_ms
-	#jal died
+	jal died
 no_collide_ms:
 #=========================
 	
@@ -385,7 +390,7 @@ no_collide_ms:
 not_draw_ms:
 	li $v0, 42
 	li $a0, 0
-	li $a1, 10  # if a1 is 1, then generate monster
+	li $a1, 30  # if a1 is 1, then generate monster
 	syscall
 	addi $t1, $zero, 1  # constant 1
 	beq $a0, $t1, generate_ms
