@@ -118,7 +118,7 @@ endbg:
 	lw $t8, 0xffff0000
  	beq $t8, 1, keyboard_input
  	j end_key
-keyboard_input:  # a key is pressed
+keyboard_input:  # key is pressed
 	lw $t2, 0xffff0004
 	beq $t2, 0x6A, respond_to_J
 	beq $t2, 0x6B, respond_to_K
@@ -203,7 +203,7 @@ update_no_collide:
 	sw $t4, ddpos_y
 	j sleep
 update_is_collide:
-	# if dd_x < 9, then dd_y remain same, but all platform drop
+	# if dd_y < 9, then dd_y remain same, but all platform drop
 	lw $t4, ddpos_y
 	addi $t6, $zero, 9
 	bge $t4, $t6, dd_rise
@@ -376,7 +376,7 @@ go_draw_ms:
 	
 	addi $t3, $zero, 1
 	bne $t2, $t3, no_collide_ms
-	#jal died
+	jal died
 no_collide_ms:
 #=========================
 	
@@ -727,6 +727,28 @@ died:
 	sw $t1, 516($t2)
 	sw $t1, 512($t2)
 	sw $t1, 384($t2) 
+	
+	sw $t1, 20($t2) 
+	sw $t1, 148($t2) 
+	sw $t1, 152($t2) 
+	sw $t1, 156($t2) 
+	sw $t1, 28($t2) 
+	sw $t1, 284($t2)
+	sw $t1, 412($t2)
+	sw $t1, 540($t2)
+	sw $t1, 536($t2)
+	sw $t1, 532($t2) 
+	
+	sw $t1, 40($t2) 
+	sw $t1, 44($t2) 
+	sw $t1, 168($t2) 
+	sw $t1, 296($t2) 
+	sw $t1, 300($t2) 
+	sw $t1, 304($t2)
+	sw $t1, 424($t2)
+	sw $t1, 552($t2)
+	sw $t1, 556($t2)
+	sw $t1, 560($t2) 
 die_loop:
 	
 	# check keyboard press
