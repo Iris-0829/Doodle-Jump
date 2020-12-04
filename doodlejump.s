@@ -58,13 +58,16 @@ pix_6: .word 1,1,1,1,0,0,1,1,1,1,0,1,1,1,1
 pix_7: .word 1,1,1,1,0,1,0,0,1,0,0,1,0,0,1
 pix_8: .word 1,1,1,1,0,1,1,1,1,1,0,1,1,1,1
 pix_9: .word 1,1,1,1,0,1,1,1,1,0,0,1,1,1,1
-scoreAddress:	.word	0x10008010  # base address for score (one's)
+scoreAddress: .word 0x10008010  # base address for score (one's)
 
 ms_pos: .word 0, 0  # x, y position of monster 0,0 means no monster
 mscolor: .word 0x785027  # brown
 
 bl_pos: .word 0,0,0,0,0,0,0,0  # bullet [x1, y1, x2, y2, x3, y3, x4, y4]
-blcolor: .word 0x8989ff  # purple
+blcolor: .word 0x3c0aa4  # purple
+
+shd_pos: .word 0, 0  # x, y pos of shield
+shdcolor: .word 0x37fbb3  # dark green
 
 newline: .asciiz "\n"
 
@@ -160,6 +163,8 @@ end_key:
 	jal drawpf
 	# draw bullet
 	jal draw_bullet
+	# draw shield pixel
+	jal draw_shield
 
 	
 	# calcullate loc of doodler
@@ -283,7 +288,6 @@ decr_x_up:
 	
 sleep:	
 	# draw bullet
-	#jal draw_bullet
 	jal update_bullet
 	jal bullet_collide_ms
 
@@ -852,6 +856,32 @@ skip_bl_ms_loop:
 end_bl_ms_loop:
 
 	jr $ra
+	
+	
+#==============draw pixel of shield=========
+draw_shield:
+	la $t0, shd_pos
+	lw $t1, shdcolor # color
+	lw $t2, displayAddress
+	# if xi, yi != 0, draw shield pix
+	
+	lw $t3, 0($t0)  # x
+	lw $t4, 4($t0)  # y
+
+	bnez $t3, draw_a_shd
+	bnez $t4, draw_a_shd
+	j end_draw_a_shd
+	
+draw_a_shd:
+	# compute address
+	sll $t4, $t4, 7
+	add $t4, $t3, $t4
+	add $t4, $t4, $t2
+	sw $t1, 0($t4)
+
+end_draw_a_shd:
+	jr $ra
+
 	
 #==============doodler died=============
 died:
