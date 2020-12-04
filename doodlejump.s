@@ -282,6 +282,7 @@ sleep:
 	# draw bullet
 	jal draw_bullet
 	jal update_bullet
+	jal bullet_collide_ms
 
 	# if score is 10 or 20 or 30, add a move block
 	lw $t1, score
@@ -810,15 +811,45 @@ update_nl:
 reset_bl:
 	sw $zero, 0($t5)
 	sw $zero, 4($t5)
-		
+
 skip_update_nl:
 	addi $t3, $t3, 8
 	j update_bl_loop
 	
-	
-	
 end_update_bl:
 	jr $ra
+	
+	
+	
+#=============check if bullet collide with ms=========
+bullet_collide_ms:
+	la $t0, bl_pos
+	la $t1, ms_pos
+	
+	lw $t2, 0($t1)  # x_ms
+	lw $t3, 4($t1)  # y_ms
+	
+	# if x_ms = x_bl, y_ms = y_bl, then x_ms = y_ms = 0
+	add $t4, $zero, $zero  # counter
+	addi $t5, $zero, 32
+bl_ms_loop:
+	bge $t4, $t5, end_bl_ms_loop
+	add $t6, $t0, $t4
+	lw $s1, 0($t6)  # x_bl
+	lw $s2, 4($t6)  # y_bl
+	bne $s1, $t2, skip_bl_ms_loop
+	bne $s2, $t3, skip_bl_ms_loop
+	# reset ms
+	sw $zero, 0($t1)
+	sw $zero, 4($t1)
+skip_bl_ms_loop:
+	addi $t4, $t4, 8
+	j bl_ms_loop
+
+end_bl_ms_loop:
+
+	jr $ra
+	
 #==============doodler died=============
 died:
 	# paint BYE, check if r is pressed
