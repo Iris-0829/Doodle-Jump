@@ -1007,11 +1007,12 @@ not_collide_shd_dd:
 	
 #==============doodler died=============
 died:
+die_loop:
 	# paint BYE, check if r is pressed
 	lw $t0, displayAddress  # base address
 	lw $t1, diecolor  # black
 	
-	addi $t2, $zero, 1300
+	addi $t2, $zero, 1320
 	add $t2, $t2, $t0
 	sw $t1, 0($t2) 
 	sw $t1, 128($t2) 
@@ -1046,7 +1047,7 @@ died:
 	sw $t1, 552($t2)
 	sw $t1, 556($t2)
 	sw $t1, 560($t2) 
-die_loop:
+
 	
 	# check keyboard press
 	lw $t8, 0xffff0000
@@ -1090,7 +1091,8 @@ respond_to_S:
 	sw $zero, 28($t1)
 	la $t1, shd_pos
 	sw $zero, 0($t1)
-	sw $zero, 4($t1)	
+	sw $zero, 4($t1)
+	lw $zero, dd_protected
 	jr $ra
 
 
