@@ -67,7 +67,7 @@ bl_pos: .word 0,0,0,0,0,0,0,0  # bullet [x1, y1, x2, y2, x3, y3, x4, y4]
 blcolor: .word 0x3c0aa4  # purple
 
 shd_pos: .word 0, 0  # x, y pos of shield
-shdcolor: .word 0x37fbb3  # dark green
+shdcolor: .word 0x1e7b5c  # dark green
 dd_protected: .word 0  # 0 means not protected
 
 newline: .asciiz "\n"
@@ -352,10 +352,18 @@ go_update_shd:
 end_update_shd:
 	# check if shd collide with doodler
 	# if collide, shd reset to (0, 0), dd_protected is 20
-	# doodler become green for 20 times, won't die on monster
+	# doodler become green for 20 times, change color, won't die on monster
 	# dd_protected should decrease by 1 every loop until 0
 	jal collide_shd_dd
+	
+	lw $t1, dd_protected
+	bgtz $t1, dec_dd_protected
+	j end_dec_dd_protected
+dec_dd_protected:
+	addi $t1, $t1, -1
+	sw $t1, dd_protected
 
+end_dec_dd_protected:
 
 	# draw bullet
 	jal update_bullet
@@ -523,6 +531,12 @@ drawdd:
 	
 	# draw player with particular shape
 	lw $t1, ddcolor  # blue
+	# if dd_protected > 0, draw with dark green
+	lw $t3, dd_protected
+	beqz $t3, cont_draw_dd
+draw_dd_gr:
+	lw $t1, shdcolor
+cont_draw_dd:
 	add $t2, $t2, $t0
 
 	sw $t1, 0($t2) # paint blue player
@@ -974,7 +988,7 @@ collide_shd_dd:
 	blt $t2, $t4, not_collide_shd_dd
 	bgt $t2, $t7, not_collide_shd_dd
 	# yes! dd collide with shd
-	addi $t7, $zero, 20
+	addi $t7, $zero, 40
 	sw $t7, dd_protected
 	# reset shd to 0,0
 	sw $zero, 0($t0)  # x_shd
