@@ -14,13 +14,14 @@
 #
 # Which milestone is reached in this submission? 
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 123 
+# - Milestone 12345
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
-# 1. (fill in the feature, if any)
-# 2. (fill in the feature, if any)
-# 3. (fill in the feature, if any)
+# 1. scoreboard
+# 2. dynamic increase in dufficulty
+# 3. opponents
+# 4. shooting
 # ... (add more if necessary)
 #
 # Link to video demonstration for final submission:
@@ -157,6 +158,8 @@ respond_to_SPACE:  # add a bullet to bl_pos
 end_key:
 	# draw platforms
 	jal drawpf
+	# draw bullet
+	jal draw_bullet
 
 	
 	# calcullate loc of doodler
@@ -280,7 +283,7 @@ decr_x_up:
 	
 sleep:	
 	# draw bullet
-	jal draw_bullet
+	#jal draw_bullet
 	jal update_bullet
 	jal bullet_collide_ms
 
@@ -882,6 +885,7 @@ died:
 	
 	sw $t1, 40($t2) 
 	sw $t1, 44($t2) 
+	sw $t1, 48($t2) 
 	sw $t1, 168($t2) 
 	sw $t1, 296($t2) 
 	sw $t1, 300($t2) 
