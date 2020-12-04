@@ -59,9 +59,11 @@ pix_8: .word 1,1,1,1,0,1,1,1,1,1,0,1,1,1,1
 pix_9: .word 1,1,1,1,0,1,1,1,1,0,0,1,1,1,1
 scoreAddress:	.word	0x10008010  # base address for score (one's)
 
-#ms_is_moveL: .word 0   # 0: not moving monster, 1: moving (score > 15)
 ms_pos: .word 0, 0  # x, y position of monster 0,0 means no monster
 mscolor: .word 0x785027  # brown
+
+bl_pos: .word 0,0,0,0,0,0,0,0  # bullet [x1, y1, x2, y2, x3, y3, x4, y4]
+blcolor: .word 0x8989ff  # purple
 
 newline: .asciiz "\n"
 
@@ -123,6 +125,7 @@ keyboard_input:  # key is pressed
 	lw $t2, 0xffff0004
 	beq $t2, 0x6A, respond_to_J
 	beq $t2, 0x6B, respond_to_K
+	beq $t2, 0x20, respond_to_SPACE
 	j end_key
 respond_to_J:  # j is pressed, player should go left
 	lw $t3, ddpos_x
@@ -145,6 +148,10 @@ go_to_left:  # go to left of screen
 	addi $t3, $t3, -128
 save_x_K:
 	sw $t3, ddpos_x
+	j end_key
+	
+respond_to_SPACE:  # add a bullet to bl_pos
+	jal add_bullet
 	j end_key
 
 end_key:
@@ -272,6 +279,10 @@ decr_x_up:
 	j sleep	
 	
 sleep:	
+	# draw bullet
+	jal draw_bullet
+	jal update_bullet
+
 	# if score is 10 or 20 or 30, add a move block
 	lw $t1, score
 	
@@ -711,9 +722,103 @@ end_scoreloop:
 end_drawsc:	
 	jr $ra
 						
+#=============add a bullet===============
+add_bullet:
+	lw $t0, ddpos_x  # x of dd
+	lw $t1, ddpos_y  # y of dd
+	la $t2, bl_pos  # array of pos of bullet
+	# loop through to find 0,0 
+	add $t3, $zero, $zero  # counter
+	addi $t4, $zero, 32
 	
+add_bl_loop:
+	bge $t3, $t4, end_add_bl_loop
+	add $t5, $t3, $t2  # address of xi
+	lw $t6, 0($t5)  # xi
+	lw $t7, 4($t5)  # yi
 	
+	bnez $t6, skip_add_bl_loop
+	bnez $t7, skip_add_bl_loop
+	# xi = yi = 0, xi = ddpos_x, y = ddpos_y-1, end loop
+	sw $t0, 0($t5)
+	addi $t8, $t1, -1
+	sw $t8, 4($t5)
+	j end_add_bl_loop
+skip_add_bl_loop:
+	addi $t3, $t3, 8
+	j add_bl_loop
+	
+end_add_bl_loop:
+	
+	jr $ra
 
+#==============draw bullet==============
+draw_bullet:
+	la $t0, bl_pos
+	lw $t1, blcolor # color
+	lw $t2, displayAddress
+	# if xi, yi != 0, draw bullet
+	add $t3, $zero, $zero  # counter
+	addi $t4, $zero, 32
+	
+draw_bl_loop:	
+	bge $t3, $t4, end_draw_bl_loop
+	add $t5, $t3, $t0
+	lw $t6, 0($t5)  # xi
+	lw $t7, 4($t5)  # yi
+	
+	bnez $t6, draw_a_bl
+	bnez $t7, draw_a_bl
+	j end_draw_a_bl
+	
+draw_a_bl:
+	# compute address
+	sll $t7, $t7, 7
+	add $t7, $t6, $t7 
+	add $t7, $t2, $t7
+	sw $t1, 0($t7)
+end_draw_a_bl:
+	addi $t3, $t3, 8
+	j draw_bl_loop
+	
+end_draw_bl_loop:
+	jr $ra
+	
+#==============update position of bullet=============
+update_bullet:
+	la $t0, bl_pos
+	# if xi, yi != 0, yi -= 1
+	add $t3, $zero, $zero  # counter
+	addi $t4, $zero, 32
+	
+update_bl_loop:
+	bge $t3, $t4, end_update_bl
+	
+	add $t5, $t3, $t0
+	lw $t6, 0($t5)  # xi
+	lw $t7, 4($t5)  # yi
+	
+	bnez $t6, update_nl
+	bnez $t7, update_nl
+	j skip_update_nl
+update_nl:
+	addi $t7, $t7, -1
+	sw $t7, 4($t5)
+	# if yi < 0, then reset xi=yi=0
+	beqz $t7, reset_bl
+	j skip_update_nl
+reset_bl:
+	sw $zero, 0($t5)
+	sw $zero, 4($t5)
+		
+skip_update_nl:
+	addi $t3, $t3, 8
+	j update_bl_loop
+	
+	
+	
+end_update_bl:
+	jr $ra
 #==============doodler died=============
 died:
 	# paint BYE, check if r is pressed
@@ -787,6 +892,15 @@ respond_to_S:
 	la $t1, ms_pos
 	sw $zero, 0($t1)
 	sw $zero, 4($t1)	
+	la $t1, bl_pos
+	sw $zero, 0($t1)
+	sw $zero, 4($t1)
+	sw $zero, 8($t1)
+	sw $zero, 12($t1)
+	sw $zero, 16($t1)
+	sw $zero, 20($t1)
+	sw $zero, 24($t1)
+	sw $zero, 28($t1)
 	jr $ra
 
 
