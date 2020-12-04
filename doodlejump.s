@@ -345,7 +345,7 @@ move_left_pf_x:
 	add $s3, $s2, $s1 
 	lw $s4, 0($s3)  # x_i
 	addi $s4, $s4, -4
-	# if x_i < 0, then change move_pf_index to -1(move to left)
+	# if x_i < 0, then change move_pf_index to 1(move to right)
 	sw $s4, 0($s3)
 	ble $s4, $zero, change_to_right
 	j no_update_x
@@ -376,7 +376,7 @@ go_draw_ms:
 	
 	addi $t3, $zero, 1
 	bne $t2, $t3, no_collide_ms
-	jal died
+	#jal died
 no_collide_ms:
 #=========================
 	
@@ -525,7 +525,7 @@ is_collide:
 
 	
 	add $t4, $zero, $zero  # counter
-	addi $t5, $zero, 80  # limit for loop over pfpos
+	addi $t5, $zero, 24  # limit for loop over pfpos
 	
 loop_pfpos:
 	bge $t4, $t5, end_loop_pfpos
