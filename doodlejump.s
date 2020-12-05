@@ -6,10 +6,10 @@
 # Student: Yining Wang, 1005723175
 #
 # Bitmap Display Configuration:
-# - Unit width in pixels: 8					     
-# - Unit height in pixels: 8
-# - Display width in pixels: 256
-# - Display height in pixels: 256
+# - Unit width in pixels: 16					     
+# - Unit height in pixels: 16
+# - Display width in pixels: 512
+# - Display height in pixels: 512
 # - Base Address for Display: 0x10008000 ($gp)
 #
 # Which milestone is reached in this submission? 
@@ -26,7 +26,8 @@
 # ... (add more if necessary)
 #
 # Link to video demonstration for final submission:
-# - (insert YouTube / MyMedia / other URL here). 
+# - https://play.library.utoronto.ca/play/da9b37d38883798508e9213d26dbc17d 
+# - https://youtu.be/RQQ9qDHzgQE
 #
 # Any additional information that the TA needs to know:
 # - (write here, if any)
@@ -65,7 +66,7 @@ ms_pos: .word 0, 0  # x, y position of monster 0,0 means no monster
 mscolor: .word 0x785027  # brown
 
 bl_pos: .word 0,0,0,0,0,0,0,0  # bullet [x1, y1, x2, y2, x3, y3, x4, y4]
-blcolor: .word 0x3c0aa4  # purple
+blcolor: .word 0x9932cc  # purple
 
 shd_pos: .word 0, 0  # x, y pos of shield
 shdcolor: .word 0x1e7b5c  # dark green
@@ -883,7 +884,6 @@ end_update_bl:
 	jr $ra
 	
 	
-	
 #=============check if bullet collide with ms=========
 bullet_collide_ms:
 	la $t0, bl_pos
@@ -916,6 +916,9 @@ end_bl_ms_loop:
 	
 #==============draw pixel of shield=========
 draw_shield:
+	lw $s0, dd_protected
+	bgtz $s0, end_draw_a_shd
+
 	la $t0, shd_pos
 	lw $t1, shdcolor # color
 	lw $t2, displayAddress
