@@ -21,7 +21,8 @@
 # 1. scoreboard
 # 2. dynamic increase in dufficulty
 # 3. opponents
-# 4. shooting
+# 4. shooting (of doodler)
+# 5. shield (for protection of doodler)
 # ... (add more if necessary)
 #
 # Link to video demonstration for final submission:
@@ -340,7 +341,7 @@ sleep:
 	lw $t1, 0($t0)  # x
 	lw $t2, 4($t0)  # y
 	
-	# generate shield if x = y = 0
+	# generate shield if x = y = 0, dd_protected = 0
 	bnez $t1, go_update_shd
 	bnez $t2, go_update_shd
 	jal generate_shd
@@ -464,8 +465,20 @@ display_score:
 	jal drawsc
 	
 	# sleep
+	# sleep time = min{60 - score, 30}
+	lw $t0, score
+	addi $t1, $zero, 60
+	#sll $t0, $t0, 1
+	sub $t0, $t1, $t0
+	addi $t2, $zero, 30
+	blt $t0, $t2, max_speed
+	j end_adjust_speed
+max_speed:
+	addi $t0, $zero, 30
+end_adjust_speed:
 	li $v0, 32
-	li $a0, 50
+	#li $a0, 80
+	move $a0, $t0
 	syscall
 	
         # check if doodler die (y > 32), if die, end central loop
@@ -965,6 +978,10 @@ update_shd:
 	# if y > 32, become (0, 0)
 	addi $t4, $zero, 30
 	bge $s1, $t4, reset_shd
+
+	# if dd_protected > 0, become (0, 0)
+	lw $t5, dd_protected
+	bgtz $t5, reset_shd
 	j set_shd_pos
 reset_shd:
 	sw $zero, 0($t3)
