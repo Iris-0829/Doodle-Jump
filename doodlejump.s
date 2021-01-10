@@ -3,7 +3,7 @@
 # CSCB58 Fall 2020 Assembly Final Project
 # University of Toronto, Scarborough
 #
-# Student: Yining Wang, 1005723175
+# Student: Yining Wang
 #
 # Bitmap Display Configuration:
 # - Unit width in pixels: 16					     
@@ -23,14 +23,7 @@
 # 3. opponents
 # 4. shooting (of doodler)
 # 5. shield (for protection of doodler)
-# ... (add more if necessary)
 #
-# Link to video demonstration for final submission:
-# - https://play.library.utoronto.ca/play/da9b37d38883798508e9213d26dbc17d 
-# - https://youtu.be/RQQ9qDHzgQE
-#
-# Any additional information that the TA needs to know:
-# - (write here, if any)
 #
 #####################################################################
 
