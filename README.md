@@ -1,6 +1,5 @@
-# CSCB58
-Doodle Jump - Final Project for CSCB58
-**Authors:** Yining Wang
+# Doodle Jump
+**Author:** Yining Wang
 
 **Setup:**
 1. Download Mars4_5.jar from http://courses.missouristate.edu/kenvollmar/mars/download.htm
@@ -13,5 +12,9 @@ Doodle Jump - Final Project for CSCB58
  - Base Address for Display: 0x10008000 ($gp)
  
  3. Tools -> Keyboard -> Connect to MIPS
+ 4. Assemble and run the program
  
- 
+**Keys:**
+Press j to go left
+Press k to go right
+Press s to restart
