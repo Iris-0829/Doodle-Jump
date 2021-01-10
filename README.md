@@ -11,10 +11,6 @@
  - Display height in pixels: 512
  - Base Address for Display: 0x10008000 ($gp)
  
- 3. Tools -> Keyboard -> Connect to MIPS
+ 3. Tools -> Keyboard and Display MMIO Simulator -> Connect to MIPS
  4. Assemble and run the program
- 
-**Keys:**
-Press j to go left
-Press k to go right
-Press s to restart
+ 5. Press j to go left, Press k to go right, Press s to restart (in Keyboard and Display MMIO Simulator)
